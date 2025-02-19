@@ -1,32 +1,30 @@
+# Weather Alert App
+
+## Prerequisites
 Before setting up the application, ensure you have the following installed on your system:
 
-Docker
-Docker Compose
+- Docker
+- Docker Compose
 
+## Setup Instructions
+Follow these steps to set up the project:
 
-Here are steps to set upthe project
-
+```sh
 git clone git@github.com:elmirabalasanyan11/weather-alert-app.git
-
 cd weather-alert-app
-
 cp .env.example .env
-
-docker-compose up -d --build 
-
+docker-compose up -d --build
 docker-compose exec app bash
-
-composer install 
-
-npm install 
-
+composer install
+npm install
 npm run build
+php artisan key:generate
+php artisan migrate
+php artisan db:seed --class=CitiesSeeder
+```
 
-php artisan key:generate 
+## Accessing the Application
+After completing the setup, the application should be accessible at:
 
-php artisan migrate 
-
-php artisan db:seed --class=CitiesSeeder 
-
-After completing the setup, the application should be accessible at http://localhost:8000
+[http://localhost:8000](http://localhost:8000)
 
