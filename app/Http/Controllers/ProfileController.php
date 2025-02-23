@@ -57,4 +57,31 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * @param Request $request
+     * @return RedirectResponse
+     */
+    public function updateNotificationMethods(Request $request): RedirectResponse
+    {
+        //todo create a separate request file
+        $validated = $request->validate([
+            'notification_methods' => 'array|max:2',
+            'notification_methods.*' => 'in:email,sms,telegram',
+            'telegram_chat_id' => 'nullable|string',
+        ]);
+
+        if (count($validated['notification_methods']) > 2) {
+            return redirect()->back()->with('error', 'You can select up to two notification methods.');
+        }
+
+        $user = Auth::user();
+
+        $user->update([
+            'notification_methods' => $validated['notification_methods'],
+            'telegram_chat_id' => $validated['telegram_chat_id']
+        ]);
+
+        return redirect()->back()->with('success', 'Notification methods updated.');
+    }
 }

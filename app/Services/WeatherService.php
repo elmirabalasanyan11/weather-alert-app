@@ -57,23 +57,24 @@ class WeatherService
         $weatherData = $weatherResponse->json();
 
 //         3.getting uv index
-        $uvResponse = Http::get("{$uvUrl}?lat={$lat}&lon={$lon}&appid={$apiKey}");
-
-
-        if ($uvResponse->failed()) {
-            Log::error("Failed to fetch UV index for coordinates: {$lat}, {$lon}", [
-                'url' => "{$uvUrl}?lat={$lat}&lon={$lon}&appid={$apiKey}",
-                'status' => $uvResponse->status(),
-                'response' => $uvResponse->body(),
-            ]);
-            return null;
-        }
-
-        $uvData = $uvResponse->json();
+//        $uvResponse = Http::get("{$uvUrl}?lat={$lat}&lon={$lon}&appid={$apiKey}");
+//
+//
+//        if ($uvResponse->failed()) {
+//            Log::error("Failed to fetch UV index for coordinates: {$lat}, {$lon}", [
+//                'url' => "{$uvUrl}?lat={$lat}&lon={$lon}&appid={$apiKey}",
+//                'status' => $uvResponse->status(),
+//                'response' => $uvResponse->body(),
+//            ]);
+//            return null;
+//        }
+//
+//        $uvData = $uvResponse->json();
 
         return [
             'weather' => $weatherData,
-            'uv_index' => $uvData['current']['uvi'] ?? null,
+//            'uv_index' => $uvData['current']['uvi'] ?? null,
+            'uv_index' =>  null,
         ];
     }
 }

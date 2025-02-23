@@ -3,31 +3,31 @@
 namespace App\Services;
 
 use App\Enums\WeatherAlertType;
-use App\Mail\WeatherAlert;
 use App\Models\User;
-use Illuminate\Support\Facades\Mail;
+use App\Services\Notifications\EmailService;
+use App\Services\Notifications\NotificationContext;
+use App\Services\Notifications\SMSService;
+use App\Services\Notifications\TelegramService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use JetBrains\PhpStorm\NoReturn;
 
 class WeatherAlertService
 {
     public function __construct(
-        private WeatherService  $weatherService,
-        private TelegramService $telegramService
-    ) {
+        private readonly WeatherService $weatherService,
+    )
+    {
     }
 
     public function checkWeatherForUsers(): void
     {
         $users = User::with('userCities.city')->get();
 
-        $users->each(fn($user) =>
-        $user->userCities->each(fn($userCity) =>
-        $this->processWeather($user, $userCity->city))
-        );
+        $users->each(fn($user) => $user->userCities->each(fn($userCity) => $this->processWeather($user, $userCity->city)));
     }
 
-    private function processWeather($user, $city): void
+    #[NoReturn] private function processWeather($user, $city): void
     {
         if (!$city) {
             return;
@@ -51,7 +51,6 @@ class WeatherAlertService
 
         $rainVolume = $weather['rain']['1h'] ?? 0;
 
-
         if ($rainVolume > 10) {
             $this->sendWeatherAlert($user, $city, "Heavy rain expected ({$rainVolume}mm) in the next hour!", WeatherAlertType::HIGH_PRECIPITATION);
         }
@@ -64,7 +63,23 @@ class WeatherAlertService
 
     private function sendWeatherAlert($user, $city, string $message, WeatherAlertType $type): void
     {
-        Mail::to($user->email)->send(new WeatherAlert($city, ['message' => $message]));
-        $this->telegramService->sendMessage($message, $type);
+        $methods = $user->notification_methods ?? ['email']; // Default to email if empty
+
+        $data = [
+            'message' => $message,
+            'city' => $city,
+            'type' => $type
+        ];
+
+        foreach ($methods as $method) {
+            $strategy = match ($method) {
+                'sms' => new SMSService(),
+                'telegram' => new TelegramService(),
+                default => new EmailService(),
+            };
+
+            $context = new NotificationContext($strategy);
+            $context->notify($user, $data);
+        }
     }
 }

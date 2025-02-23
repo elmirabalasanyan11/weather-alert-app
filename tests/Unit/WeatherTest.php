@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Console\Commands\CheckWeather;
-use App\Mail\WeatherAlert;
+use App\Services\Notifications\EmailService;
 use App\Services\WeatherAlertService;
 use App\Services\WeatherService;
 use App\Models\UserCity;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +15,7 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\City;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-
+use Illuminate\Mail\SentMessage;
 class WeatherTest extends TestCase
 {
     use RefreshDatabase;
@@ -48,9 +46,9 @@ class WeatherTest extends TestCase
         $this->assertIsArray($data);
     }
 
+    //todo fix this
     public function test_weather_alert_service_sends_notifications()
     {
-        Mail::fake();
         Log::spy();
         Cache::shouldReceive('remember')->andReturn([
             'weather' => ['rain' => ['1h' => 15]],
@@ -61,10 +59,22 @@ class WeatherTest extends TestCase
         $city = City::factory()->create();
         $user->userCities()->create(['city_id' => $city->id]);
 
+        // ✅ Spy on EmailService instead of Mail
+        $emailServiceMock = \Mockery::mock(EmailService::class);
+        $emailServiceMock->shouldReceive('send')
+            ->once()
+            ->withArgs(function ($sentUser, $data) use ($user) {
+                return $sentUser->id === $user->id && isset($data['message']);
+            });
+
+        // Replace EmailService in the service container
+        $this->app->instance(EmailService::class, $emailServiceMock);
+
         $weatherAlertService = app(WeatherAlertService::class);
         $weatherAlertService->checkWeatherForUsers();
 
-        Mail::assertSent(WeatherAlert::class);
+        // ✅ Assert that the email service method was called
+        \Mockery::close();  // Close Mockery after the test
     }
 
     public function test_city_index()

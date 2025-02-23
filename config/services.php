@@ -40,4 +40,7 @@ return [
         'uv_url' => env('OPENWEATHER_UV_URL'),
         'geo_url' => env('OPENWEATHER_GEO_URL'),
     ],
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    ],
 ];
